@@ -1,5 +1,9 @@
 // load up the user model
-const User            = require('../application/models/user')
+const User              = require('../application/models/user')
+const mongoose = require('mongoose')
+const Humeur            = require('../application/models/humeur')
+const configDB = require('../config/database.js')
+const db = mongoose.createConnection(configDB.url)
 
 //to send emails
 const smtpTransport = require('../config/mailer')
@@ -28,7 +32,7 @@ module.exports = function(app, passport) {
 
     // process the login form
     app.post('/login', passport.authenticate('local-login', {
-        successRedirect : '/profile', // redirect to the secure profile section
+        successRedirect : '/humeur', // redirect to the secure profile section
         failureRedirect : '/login', // redirect back to the signup page if there is an error
         failureFlash : true // allow flash messages
     }))
@@ -356,7 +360,7 @@ module.exports = function(app, passport) {
     // handle the callback after facebook has authenticated the user
     app.get('/auth/facebook/callback',
         passport.authenticate('facebook', {
-            successRedirect : '/profile',
+            successRedirect : '/humeur',
             failureRedirect : '/'
         }))
 
@@ -369,7 +373,7 @@ module.exports = function(app, passport) {
     // handle the callback after twitter has authenticated the user
     app.get('/auth/twitter/callback',
         passport.authenticate('twitter', {
-            successRedirect : '/profile',
+            successRedirect : '/humeur',
             failureRedirect : '/'
         }))
 
@@ -384,7 +388,7 @@ module.exports = function(app, passport) {
     // the callback after google has authenticated the user
     app.get('/auth/google/callback',
             passport.authenticate('google', {
-                    successRedirect : '/profile',
+                    successRedirect : '/humeur',
                     failureRedirect : '/'
             }))
 
@@ -406,7 +410,7 @@ module.exports = function(app, passport) {
             res.render('connect-local.ejs', { message: req.flash('loginMessage') })
         })
         app.post('/connect/local', isLoggedInAndActivated, passport.authenticate('local-signup', {
-            successRedirect : '/profile', // redirect to the secure profile section
+            successRedirect : '/humeur', // redirect to the secure profile section
             failureRedirect : '/connect/local', // redirect back to the signup page if there is an error
             failureFlash : true // allow flash messages
         }))
@@ -419,7 +423,7 @@ module.exports = function(app, passport) {
         // handle the callback after facebook has authorized the user
         app.get('/connect/facebook/callback', isLoggedInAndActivated,
             passport.authorize('facebook', {
-                successRedirect : '/profile',
+                successRedirect : '/humeur',
                 failureRedirect : '/'
             }))
 
@@ -431,7 +435,7 @@ module.exports = function(app, passport) {
         // handle the callback after twitter has authorized the user
         app.get('/connect/twitter/callback', isLoggedInAndActivated,
             passport.authorize('twitter', {
-                successRedirect : '/profile',
+                successRedirect : '/humeur',
                 failureRedirect : '/'
             }))
 
@@ -443,7 +447,7 @@ module.exports = function(app, passport) {
         // the callback after google has authorized the user
         app.get('/connect/google/callback', isLoggedInAndActivated,
             passport.authorize('google', {
-                successRedirect : '/profile',
+                successRedirect : '/humeur',
                 failureRedirect : '/'
             }))
 
@@ -490,8 +494,93 @@ module.exports = function(app, passport) {
            res.redirect('/profile')
         })
     })
+    
+    // Récupérer l'humeur ----------------------
+    app.get('/humeur', isLoggedInAndActivated, function(req, res) {
+        var user = req.user
+		var humeur = new Humeur();
+		var list;
+		var list_humeurs = require("../ressources/humeurs.json")
+		console.log(list_humeurs.humeurs[1])
+		Humeur.find({'user' : req.user},
+			function(err, docs){
+				user.moods = docs;
+				res.render('humeur.ejs',{
+					moods : user.moods ,list : list_humeurs
+				})
+			}
+		);
+    })
+    
+    app.post('/humeur', isLoggedInAndActivated, function(req, res) {
+
+        var newmood = new Humeur()
+        newmood.emotion = req.body.mood
+        newmood.user = req.user
+        newmood.date = new Date().getTime()
+        newmood.lat = req.body.lat
+        newmood.long = req.body.long
+        newmood.city = req.body.city
+        newmood.save(function(err) {
+           res.redirect('/humeur')
+        })
+           
+    })
 
 
+
+// Récupérer toutes les humeurs--
+    app.get('/listhumeur', isLoggedInAndActivated, function(req, res) {
+            var user = req.user
+            var humeur = new Humeur();
+            var list;
+            var list_humeurs = require("../ressources/humeurs.json")
+            console.log(list_humeurs.humeurs[1])
+            Humeur.find({},
+            function(err, docs){
+                user.moods = docs;
+				res.render('listhumeur.ejs',{
+					moods : user.moods ,list : list_humeurs
+				})
+			});
+		})
+		
+    app.get('/graph_mood', isLoggedInAndActivated, function(req, res) {
+        var user = req.user
+		var humeur = new Humeur();
+		var list;
+		var list_humeurs = require("../ressources/humeurs.json")
+		Humeur.find({'user' : req.user},
+			function(err, docs){
+				console.log(docs)
+				user.moods = docs;
+				res.render('graph_mood.ejs',{
+					moods : user.moods ,list : list_humeurs
+				})
+			}
+		);
+	})
+
+    app.post('/humeur', isLoggedInAndActivated, function(req, res) {
+
+        var newmood = new Humeur()
+        newmood.emotion = req.body.mood
+        newmood.user = req.user
+        newmood.date = new Date().getTime()
+        newmood.lat = req.body.lat
+        newmood.long = req.body.long
+        newmood.city = req.body.city
+        newmood.save(function(err) {
+           res.redirect('/humeur')
+        })
+           
+    })
+
+
+
+
+		
+    
 }
 
 // route middleware to make sure a user is logged in

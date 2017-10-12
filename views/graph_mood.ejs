@@ -1,0 +1,58 @@
+<!-- views/index.ejs -->
+<!doctype html>
+<html>
+	<head>
+        <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+		<title>Visualisation des humeurs</title>
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" integrity="sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M" crossorigin="anonymous">
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+		<style>
+			#myDiv{ width:500px; height:700px}
+		</style>
+	</head>
+	<body>
+        <div id="myDiv"></div>
+		
+		<a href="/profile" class="btn btn-default">Mon Profil</a></br>
+		
+		<script>
+			var humeur = <%- JSON.stringify(moods) %> 	//Récupération des humeurs de l'utilisateur
+			var onto = <%- JSON.stringify(list) %>		//Récupération du dico des humeurs
+			var onto = onto.humeurs
+			var onto2 = {}
+			for (i in onto){							//Convertion du dico des humeurs
+				onto[i].valeur -= 100
+				onto2[onto[i].humeur] = onto[i].valeur
+			}
+
+			var tab = []
+			
+			for (i in humeur){
+				if (humeur[i].emotion == undefined){
+					tab.push(0)
+				}
+				else{
+					tab.push(onto2[humeur[i].emotion])
+				}
+			}
+			
+			var trace1 = {
+			  y: tab,
+			  name: 'Humeur Général',
+			  marker: {color: '#57A1C4'},
+			  type: 'box'
+			};
+			
+			var data = [trace1];
+			var layout = {
+			  yaxis: {
+				title: 'Boite à moustache (en %)',
+				zeroline: true
+			  },
+			  boxmode: 'group'
+			};
+			Plotly.newPlot('myDiv', data, layout);
+			
+		</script>
+	</body>
+</html>
